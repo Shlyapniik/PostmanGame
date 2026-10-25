@@ -5,10 +5,9 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float moveSpeed = 5f;
 
     private Rigidbody2D rb;
-    private Vector2 movement;
+    private GameInputManager inputManager;
 
-    private DialogueManager dialogueManager;
-    private DayManager dayManager;
+    private Vector2 movement;
 
     private void Awake()
     {
@@ -17,44 +16,42 @@ public class PlayerMovement : MonoBehaviour
 
     private void Start()
     {
-        dialogueManager = FindFirstObjectByType<DialogueManager>();
-        dayManager = FindFirstObjectByType<DayManager>();
+        inputManager =
+            FindFirstObjectByType<GameInputManager>();
+
+        if (inputManager == null)
+        {
+            Debug.LogError(
+                "PlayerMovement: GameInputManager не найден.");
+        }
     }
 
     private void Update()
     {
-        if (IsMovementBlocked())
+        if (inputManager != null &&
+            inputManager.IsPlayerInputBlocked)
         {
             movement = Vector2.zero;
             return;
         }
 
-        movement.x = Input.GetAxisRaw("Horizontal");
-        movement.y = Input.GetAxisRaw("Vertical");
+        movement = new Vector2(
+            Input.GetAxisRaw("Horizontal"),
+            Input.GetAxisRaw("Vertical"));
 
         movement = movement.normalized;
     }
 
     private void FixedUpdate()
     {
-        if (IsMovementBlocked())
+        if (inputManager != null &&
+            inputManager.IsPlayerInputBlocked)
         {
             rb.linearVelocity = Vector2.zero;
             return;
         }
 
-        rb.linearVelocity = movement * moveSpeed;
-    }
-
-    private bool IsMovementBlocked()
-    {
-        if (dialogueManager != null && dialogueManager.IsDialogueActive)
-            return true;
-
-        if (dayManager != null &&
-            dayManager.CurrentState == WorkDayState.Summary)
-            return true;
-
-        return false;
+        rb.linearVelocity =
+            movement * moveSpeed;
     }
 }
