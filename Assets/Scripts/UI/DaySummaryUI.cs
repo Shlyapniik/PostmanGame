@@ -13,61 +13,106 @@ public class DaySummaryUI : MonoBehaviour
     [SerializeField] private Button nextDayButton;
 
     private DayManager dayManager;
-    private PlayerMovement playerMovement;
+    private GameInputManager inputManager;
 
     private void Start()
     {
-        dayManager = FindFirstObjectByType<DayManager>();
-        playerMovement = FindFirstObjectByType<PlayerMovement>();
+        dayManager =
+            FindFirstObjectByType<DayManager>();
+
+        inputManager =
+            FindFirstObjectByType<GameInputManager>();
 
         if (dayManager == null)
         {
-            Debug.LogError("DaySummaryUI: DayManager не найден.");
+            Debug.LogError(
+                "DaySummaryUI: DayManager не найден.");
+
             return;
         }
 
-        dayManager.OnStateChanged += HandleStateChanged;
+        if (inputManager == null)
+        {
+            Debug.LogError(
+                "DaySummaryUI: GameInputManager не найден.");
+        }
 
-        nextDayButton.onClick.AddListener(OnNextDayClicked);
+        dayManager.OnStateChanged +=
+            HandleStateChanged;
+
+        if (nextDayButton != null)
+        {
+            nextDayButton.onClick.AddListener(
+                OnNextDayClicked);
+        }
 
         summaryPanel.SetActive(false);
     }
 
-    private void HandleStateChanged(WorkDayState state)
+    private void HandleStateChanged(
+        WorkDayState state)
     {
         if (state == WorkDayState.Summary)
         {
             ShowSummary();
+            return;
         }
-        else
-        {
-            summaryPanel.SetActive(false);
-        }
+
+        HideSummary();
     }
 
     private void ShowSummary()
     {
-        titleText.text = "Рабочий день завершён";
-        dayNumberText.text = $"День {dayManager.CurrentDay}";
+        titleText.text =
+            "Рабочий день завершён";
+
+        dayNumberText.text =
+            $"День {dayManager.CurrentDay}";
+
         deliveredText.text =
-            $"Доставлено: {dayManager.LastDayDeliveredCount}";
+            $"Доставлено: " +
+            $"{dayManager.LastDayDeliveredCount}";
+
         remainingText.text =
-            $"Осталось: {dayManager.LastDayRemainingCount}";
+            $"Осталось: " +
+            $"{dayManager.LastDayRemainingCount}";
 
         summaryPanel.SetActive(true);
+
+        inputManager?.AddBlocker(
+            InputBlocker.DaySummary);
+    }
+
+    private void HideSummary()
+    {
+        summaryPanel.SetActive(false);
+
+        inputManager?.RemoveBlocker(
+            InputBlocker.DaySummary);
     }
 
     private void OnNextDayClicked()
     {
+        HideSummary();
+
         dayManager.StartNextDay();
     }
 
     private void OnDestroy()
     {
         if (dayManager != null)
-            dayManager.OnStateChanged -= HandleStateChanged;
+        {
+            dayManager.OnStateChanged -=
+                HandleStateChanged;
+        }
 
         if (nextDayButton != null)
-            nextDayButton.onClick.RemoveListener(OnNextDayClicked);
+        {
+            nextDayButton.onClick.RemoveListener(
+                OnNextDayClicked);
+        }
+
+        inputManager?.RemoveBlocker(
+            InputBlocker.DaySummary);
     }
 }

@@ -12,25 +12,37 @@ public class QuestJournalUI : MonoBehaviour
     [SerializeField] private KeyCode toggleKey = KeyCode.J;
 
     private QuestManager questManager;
-    private DialogueManager dialogueManager;
-    private DayManager dayManager;
+    private GameInputManager inputManager;
 
     private void Start()
     {
-        questManager = FindFirstObjectByType<QuestManager>();
-        dialogueManager = FindFirstObjectByType<DialogueManager>();
-        dayManager = FindFirstObjectByType<DayManager>();
+        questManager =
+            FindFirstObjectByType<QuestManager>();
+
+        inputManager =
+            FindFirstObjectByType<GameInputManager>();
 
         if (questManager == null)
         {
-            Debug.LogError("QuestJournalUI: QuestManager не найден.");
+            Debug.LogError(
+                "QuestJournalUI: QuestManager не найден.");
             return;
         }
 
-        questManager.OnQuestStateChanged += HandleQuestChanged;
-        questManager.OnQuestObjectiveChanged += HandleObjectiveChanged;
+        if (inputManager == null)
+        {
+            Debug.LogError(
+                "QuestJournalUI: GameInputManager не найден.");
+        }
+
+        questManager.OnQuestStateChanged +=
+            HandleQuestChanged;
+
+        questManager.OnQuestObjectiveChanged +=
+            HandleObjectiveChanged;
 
         journalPanel.SetActive(false);
+
         RefreshJournal();
     }
 
@@ -39,40 +51,69 @@ public class QuestJournalUI : MonoBehaviour
         if (!Input.GetKeyDown(toggleKey))
             return;
 
-        bool isOpen = journalPanel.activeSelf;
-
-        if (!isOpen)
+        if (journalPanel.activeSelf)
         {
-            if (dialogueManager != null &&
-                dialogueManager.IsDialogueActive)
-                return;
-
-            if (dayManager != null &&
-                dayManager.CurrentState == WorkDayState.Summary)
-                return;
+            CloseJournal();
+            return;
         }
 
-        journalPanel.SetActive(!isOpen);
+        if (inputManager != null &&
+            inputManager.IsPlayerInputBlocked)
+        {
+            return;
+        }
 
-        if (!isOpen)
-            RefreshJournal();
+        OpenJournal();
     }
 
-    private void HandleQuestChanged(string questId, QuestState state)
+    private void OpenJournal()
+    {
+        journalPanel.SetActive(true);
+
+        inputManager?.AddBlocker(
+            InputBlocker.QuestJournal);
+
+        RefreshJournal();
+    }
+
+    private void CloseJournal()
+    {
+        journalPanel.SetActive(false);
+
+        inputManager?.RemoveBlocker(
+            InputBlocker.QuestJournal);
+    }
+
+    private void HandleQuestChanged(
+        string questId,
+        QuestState state)
+    {
+        RefreshJournal();
+    }
+
+    private void HandleObjectiveChanged(
+        string questId,
+        int objectiveIndex)
     {
         RefreshJournal();
     }
 
     private void RefreshJournal()
     {
-        if (questManager == null || questListText == null)
+        if (questManager == null ||
+            questListText == null)
+        {
             return;
+        }
 
-        var quests = questManager.GetActiveQuests();
+        var quests =
+            questManager.GetActiveQuests();
 
         if (quests.Count == 0)
         {
-            questListText.text = "Нет активных заданий.";
+            questListText.text =
+                "Нет активных заданий.";
+
             return;
         }
 
@@ -80,24 +121,31 @@ public class QuestJournalUI : MonoBehaviour
 
         foreach (QuestData quest in quests)
         {
-            builder.AppendLine($"<b>{quest.questName}</b>");
-            builder.AppendLine(quest.description);
+            builder.AppendLine(
+                $"<b>{quest.questName}</b>");
+
+            builder.AppendLine(
+                quest.description);
 
             QuestObjective objective =
-                questManager.GetCurrentObjective(quest.questId);
+                questManager.GetCurrentObjective(
+                    quest.questId);
 
             if (objective != null)
             {
                 builder.AppendLine();
+
                 builder.AppendLine(
-                    $"<color=#FFD966>Текущая цель:</color> {objective.description}");
+                    $"<color=#FFD966>Текущая цель:</color> " +
+                    objective.description);
             }
 
             builder.AppendLine();
             builder.AppendLine();
         }
 
-        questListText.text = builder.ToString();
+        questListText.text =
+            builder.ToString();
     }
 
     private void OnDestroy()
@@ -105,12 +153,10 @@ public class QuestJournalUI : MonoBehaviour
         if (questManager == null)
             return;
 
-        questManager.OnQuestStateChanged -= HandleQuestChanged;
-        questManager.OnQuestObjectiveChanged -= HandleObjectiveChanged;
-    }
+        questManager.OnQuestStateChanged -=
+            HandleQuestChanged;
 
-    private void HandleObjectiveChanged(string questId, int objectiveIndex)
-    {
-        RefreshJournal();
+        questManager.OnQuestObjectiveChanged -=
+            HandleObjectiveChanged;
     }
 }

@@ -8,34 +8,43 @@ public class PlayerInteraction : MonoBehaviour
     [SerializeField] private GameObject interactionPrompt;
     [SerializeField] private TMP_Text interactionPromptText;
 
-    private readonly List<MonoBehaviour> nearbyInteractables = new();
+    private readonly List<MonoBehaviour> nearbyInteractables =
+        new();
 
     private IInteractable currentInteractable;
     private DialogueManager dialogueManager;
-    private DayManager dayManager;
+    private GameInputManager inputManager;
 
     private void Start()
     {
-        dialogueManager = FindFirstObjectByType<DialogueManager>();
-        dayManager = FindFirstObjectByType<DayManager>();
+        dialogueManager =
+            FindFirstObjectByType<DialogueManager>();
+
+        inputManager =
+            FindFirstObjectByType<GameInputManager>();
 
         if (dialogueManager == null)
-            Debug.LogError("PlayerInteraction: DialogueManager не найден.");
+        {
+            Debug.LogError(
+                "PlayerInteraction: DialogueManager не найден.");
+        }
+
+        if (inputManager == null)
+        {
+            Debug.LogError(
+                "PlayerInteraction: GameInputManager не найден.");
+        }
 
         UpdatePrompt();
     }
 
     private void Update()
     {
-        if (dayManager != null &&
-    dayManager.CurrentState == WorkDayState.Summary)
-        {
-            currentInteractable = null;
-            UpdatePrompt();
-            return;
-        }
-   
-        if (dialogueManager != null && dialogueManager.IsDialogueActive)
+        // Диалог обрабатываем отдельно.
+        // Dialogue сам является блокировщиком управления,
+        // но E всё равно должна переключать его реплики.
+        if (dialogueManager != null &&
+            dialogueManager.IsDialogueActive)
         {
             if (Input.GetKeyDown(KeyCode.E))
                 dialogueManager.ContinueDialogue();
@@ -44,7 +53,17 @@ public class PlayerInteraction : MonoBehaviour
             return;
         }
 
-        // Постоянно проверяем ближайший доступный объект.
+        // Если управление заблокировано чем-то другим
+        // (журнал, сумка, экран итогов),
+        // взаимодействовать с миром нельзя.
+        if (inputManager != null &&
+            inputManager.IsPlayerInputBlocked)
+        {
+            currentInteractable = null;
+            UpdatePrompt();
+            return;
+        }
+
         FindClosestInteractable();
 
         if (Input.GetKeyDown(KeyCode.E) &&
@@ -52,8 +71,6 @@ public class PlayerInteraction : MonoBehaviour
             currentInteractable.CanInteract())
         {
             currentInteractable.Interact();
-
-            // После взаимодействия состояние могло измениться.
             FindClosestInteractable();
         }
 
@@ -62,7 +79,8 @@ public class PlayerInteraction : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        MonoBehaviour[] components = other.GetComponents<MonoBehaviour>();
+        MonoBehaviour[] components =
+            other.GetComponents<MonoBehaviour>();
 
         foreach (MonoBehaviour component in components)
         {
@@ -79,12 +97,11 @@ public class PlayerInteraction : MonoBehaviour
 
     private void OnTriggerExit2D(Collider2D other)
     {
-        MonoBehaviour[] components = other.GetComponents<MonoBehaviour>();
+        MonoBehaviour[] components =
+            other.GetComponents<MonoBehaviour>();
 
         foreach (MonoBehaviour component in components)
-        {
             nearbyInteractables.Remove(component);
-        }
 
         FindClosestInteractable();
         UpdatePrompt();
@@ -93,12 +110,14 @@ public class PlayerInteraction : MonoBehaviour
     private void FindClosestInteractable()
     {
         currentInteractable = null;
-
         float closestDistance = float.MaxValue;
 
-        for (int i = nearbyInteractables.Count - 1; i >= 0; i--)
+        for (int i = nearbyInteractables.Count - 1;
+             i >= 0;
+             i--)
         {
-            MonoBehaviour component = nearbyInteractables[i];
+            MonoBehaviour component =
+                nearbyInteractables[i];
 
             if (component == null)
             {
@@ -112,9 +131,11 @@ public class PlayerInteraction : MonoBehaviour
             if (!interactable.CanInteract())
                 continue;
 
-            float distance = Vector2.SqrMagnitude(
-                (Vector2)(component.transform.position - transform.position)
-            );
+            float distance =
+                Vector2.SqrMagnitude(
+                    (Vector2)(
+                        component.transform.position -
+                        transform.position));
 
             if (distance < closestDistance)
             {
@@ -126,17 +147,19 @@ public class PlayerInteraction : MonoBehaviour
 
     private void UpdatePrompt()
     {
-        if (interactionPrompt == null || interactionPromptText == null)
+        if (interactionPrompt == null ||
+            interactionPromptText == null)
             return;
 
-        if (dialogueManager != null && dialogueManager.IsDialogueActive)
+        if (dialogueManager != null &&
+            dialogueManager.IsDialogueActive)
         {
             interactionPrompt.SetActive(false);
             return;
         }
 
-        if (dayManager != null &&
-    dayManager.CurrentState == WorkDayState.Summary)
+        if (inputManager != null &&
+            inputManager.IsPlayerInputBlocked)
         {
             interactionPrompt.SetActive(false);
             return;
@@ -149,6 +172,9 @@ public class PlayerInteraction : MonoBehaviour
         interactionPrompt.SetActive(shouldShow);
 
         if (shouldShow)
-            interactionPromptText.text = currentInteractable.GetInteractionText();
+        {
+            interactionPromptText.text =
+                currentInteractable.GetInteractionText();
+        }
     }
 }

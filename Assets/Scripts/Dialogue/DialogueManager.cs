@@ -18,8 +18,21 @@ public class DialogueManager : MonoBehaviour
     private DialogueData currentDialogue;
     private Action<string> currentActionHandler;
     private int currentLineIndex;
+    private GameInputManager inputManager;
 
     public bool IsDialogueActive { get; private set; }
+
+    private void Awake()
+    {
+        inputManager =
+            FindFirstObjectByType<GameInputManager>();
+
+        if (inputManager == null)
+        {
+            Debug.LogError(
+                "DialogueManager: GameInputManager не найден.");
+        }
+    }
 
     public void StartDialogue(
         DialogueData dialogue,
@@ -35,6 +48,7 @@ public class DialogueManager : MonoBehaviour
         currentLineIndex = 0;
 
         IsDialogueActive = true;
+        inputManager?.AddBlocker(InputBlocker.Dialogue);
         dialoguePanel.SetActive(true);
 
         HideChoices();
@@ -158,6 +172,7 @@ public class DialogueManager : MonoBehaviour
     private void EndDialogue()
     {
         IsDialogueActive = false;
+        inputManager?.RemoveBlocker(InputBlocker.Dialogue);
 
         currentDialogue = null;
         currentActionHandler = null;
