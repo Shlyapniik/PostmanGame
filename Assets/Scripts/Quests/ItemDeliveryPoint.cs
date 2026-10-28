@@ -10,47 +10,60 @@ public class ItemDeliveryPoint : MonoBehaviour, IInteractable
     [SerializeField] private string objectiveId;
 
     [Header("Interaction")]
-    [SerializeField] private string interactionText = "[E] Передать предмет";
-    [SerializeField] private bool disableAfterDelivery = true;
+    [SerializeField]
+    private string interactionText =
+        "[E] Передать предмет";
 
     [Header("Story")]
-    [Tooltip("Необязательный флаг после успешной передачи")]
     [SerializeField] private string flagOnDelivery;
 
     private InventoryManager inventoryManager;
     private QuestManager questManager;
     private StoryFlags storyFlags;
 
-    private bool hasDelivered;
-
     private void Start()
     {
-        inventoryManager = FindFirstObjectByType<InventoryManager>();
-        questManager = FindFirstObjectByType<QuestManager>();
-        storyFlags = FindFirstObjectByType<StoryFlags>();
+        inventoryManager =
+            FindFirstObjectByType<InventoryManager>();
+
+        questManager =
+            FindFirstObjectByType<QuestManager>();
+
+        storyFlags =
+            FindFirstObjectByType<StoryFlags>();
 
         if (inventoryManager == null)
+        {
             Debug.LogError(
                 $"ItemDeliveryPoint {name}: InventoryManager не найден.");
+        }
 
         if (questManager == null)
+        {
             Debug.LogError(
                 $"ItemDeliveryPoint {name}: QuestManager не найден.");
+        }
     }
 
     public bool CanInteract()
     {
-        if (inventoryManager == null || questManager == null)
+        if (inventoryManager == null ||
+            questManager == null)
+        {
             return false;
+        }
 
-        if (disableAfterDelivery && hasDelivered)
+        if (!inventoryManager.HasItem(
+            requiredItemId))
+        {
             return false;
+        }
 
-        if (!inventoryManager.HasItem(requiredItemId))
+        if (questManager.GetQuestState(questId) !=
+            QuestState.Active)
+        {
             return false;
-
-        if (questManager.GetQuestState(questId) != QuestState.Active)
-            return false;
+        }
 
         QuestObjective objective =
             questManager.GetCurrentObjective(questId);
@@ -70,7 +83,8 @@ public class ItemDeliveryPoint : MonoBehaviour, IInteractable
             return;
 
         bool itemRemoved =
-            inventoryManager.RemoveItem(requiredItemId);
+            inventoryManager.RemoveItem(
+                requiredItemId);
 
         if (!itemRemoved)
             return;
@@ -82,15 +96,18 @@ public class ItemDeliveryPoint : MonoBehaviour, IInteractable
 
         if (!objectiveCompleted)
         {
-            // На случай неожиданной ошибки возвращаем предмет игроку.
-            inventoryManager.AddItem(requiredItemId);
+            inventoryManager.AddItem(
+                requiredItemId);
+
             return;
         }
 
-        hasDelivered = true;
-
-        if (!string.IsNullOrWhiteSpace(flagOnDelivery))
-            storyFlags?.SetFlag(flagOnDelivery);
+        if (!string.IsNullOrWhiteSpace(
+            flagOnDelivery))
+        {
+            storyFlags?.SetFlag(
+                flagOnDelivery);
+        }
 
         Debug.Log(
             $"[ItemDelivery] Предмет {requiredItemId} успешно передан.");

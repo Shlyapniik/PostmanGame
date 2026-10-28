@@ -26,7 +26,9 @@ public class StoryFlags : MonoBehaviour
 
         Debug.Log($"[Story] Флаг установлен: {flagId}");
 
-        OnFlagChanged?.Invoke(flagId, true);
+        OnFlagChanged?.Invoke(
+            flagId,
+            true);
     }
 
     public void RemoveFlag(string flagId)
@@ -39,6 +41,27 @@ public class StoryFlags : MonoBehaviour
 
         Debug.Log($"[Story] Флаг удалён: {flagId}");
 
-        OnFlagChanged?.Invoke(flagId, false);
+        OnFlagChanged?.Invoke(
+            flagId,
+            false);
+    }
+
+    public List<string> GetAllFlags()
+    {
+        return new List<string>(flags);
+    }
+
+    public void LoadFlags(List<string> savedFlags)
+    {
+        flags.Clear();
+
+        if (savedFlags == null)
+            return;
+
+        foreach (string flagId in savedFlags)
+        {
+            if (!string.IsNullOrWhiteSpace(flagId))
+                flags.Add(flagId);
+        }
     }
 }

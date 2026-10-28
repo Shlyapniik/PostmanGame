@@ -7,27 +7,29 @@ public class QuestTrigger : MonoBehaviour, IInteractable
     [SerializeField] private string objectiveId;
 
     [Header("Interaction")]
-    [SerializeField] private string interactionText = "[E] Осмотреть";
-
-    [Tooltip("Отключить взаимодействие после выполнения цели")]
-    [SerializeField] private bool disableAfterCompletion = true;
+    [SerializeField]
+    private string interactionText =
+        "[E] Осмотреть";
 
     [Header("Story")]
-    [Tooltip("Необязательный флаг после выполнения цели")]
     [SerializeField] private string flagOnCompletion;
 
     private QuestManager questManager;
     private StoryFlags storyFlags;
 
-    private bool hasBeenActivated;
-
     private void Start()
     {
-        questManager = FindFirstObjectByType<QuestManager>();
-        storyFlags = FindFirstObjectByType<StoryFlags>();
+        questManager =
+            FindFirstObjectByType<QuestManager>();
+
+        storyFlags =
+            FindFirstObjectByType<StoryFlags>();
 
         if (questManager == null)
-            Debug.LogError($"QuestTrigger {name}: QuestManager не найден.");
+        {
+            Debug.LogError(
+                $"QuestTrigger {name}: QuestManager не найден.");
+        }
     }
 
     public bool CanInteract()
@@ -35,11 +37,11 @@ public class QuestTrigger : MonoBehaviour, IInteractable
         if (questManager == null)
             return false;
 
-        if (disableAfterCompletion && hasBeenActivated)
+        if (questManager.GetQuestState(questId) !=
+            QuestState.Active)
+        {
             return false;
-
-        if (questManager.GetQuestState(questId) != QuestState.Active)
-            return false;
+        }
 
         QuestObjective objective =
             questManager.GetCurrentObjective(questId);
@@ -58,18 +60,22 @@ public class QuestTrigger : MonoBehaviour, IInteractable
         if (!CanInteract())
             return;
 
-        bool completed = questManager.CompleteObjective(
-            questId,
-            objectiveId);
+        bool completed =
+            questManager.CompleteObjective(
+                questId,
+                objectiveId);
 
         if (!completed)
             return;
 
-        hasBeenActivated = true;
+        if (!string.IsNullOrWhiteSpace(
+            flagOnCompletion))
+        {
+            storyFlags?.SetFlag(
+                flagOnCompletion);
+        }
 
-        if (!string.IsNullOrWhiteSpace(flagOnCompletion))
-            storyFlags?.SetFlag(flagOnCompletion);
-
-        Debug.Log($"[QuestTrigger] Объект {name} активирован.");
+        Debug.Log(
+            $"[QuestTrigger] Объект {name} активирован.");
     }
 }

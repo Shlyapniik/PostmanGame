@@ -24,7 +24,9 @@ public class QuestManager : MonoBehaviour
         if (string.IsNullOrWhiteSpace(questId))
             return QuestState.NotStarted;
 
-        return questStates.TryGetValue(questId, out QuestState state)
+        return questStates.TryGetValue(
+            questId,
+            out QuestState state)
             ? state
             : QuestState.NotStarted;
     }
@@ -36,8 +38,11 @@ public class QuestManager : MonoBehaviour
 
         foreach (QuestData quest in availableQuests)
         {
-            if (quest != null && quest.questId == questId)
+            if (quest != null &&
+                quest.questId == questId)
+            {
                 return quest;
+            }
         }
 
         return null;
@@ -45,62 +50,99 @@ public class QuestManager : MonoBehaviour
 
     public bool StartQuest(string questId)
     {
-        QuestData quest = GetQuestData(questId);
+        QuestData quest =
+            GetQuestData(questId);
 
         if (quest == null)
         {
-            Debug.LogWarning($"Задание не найдено: {questId}");
+            Debug.LogWarning(
+                $"Задание не найдено: {questId}");
+
             return false;
         }
 
-        if (GetQuestState(questId) != QuestState.NotStarted)
+        if (GetQuestState(questId) !=
+            QuestState.NotStarted)
+        {
             return false;
+        }
 
-        questStates[questId] = QuestState.Active;
+        questStates[questId] =
+            QuestState.Active;
+
         objectiveIndices[questId] = 0;
 
-        Debug.Log($"[Quest] Задание начато: {questId}");
-        OnQuestStateChanged?.Invoke(questId, QuestState.Active);
-        OnQuestObjectiveChanged?.Invoke(questId, 0);
+        Debug.Log(
+            $"[Quest] Задание начато: {questId}");
+
+        OnQuestStateChanged?.Invoke(
+            questId,
+            QuestState.Active);
+
+        OnQuestObjectiveChanged?.Invoke(
+            questId,
+            0);
 
         return true;
     }
 
-    public bool CompleteObjective(string questId, string objectiveId)
+    public bool CompleteObjective(
+        string questId,
+        string objectiveId)
     {
-        if (GetQuestState(questId) != QuestState.Active)
+        if (GetQuestState(questId) !=
+            QuestState.Active)
+        {
             return false;
+        }
 
-        QuestData quest = GetQuestData(questId);
+        QuestData quest =
+            GetQuestData(questId);
 
         if (quest == null ||
             quest.objectives == null ||
             quest.objectives.Length == 0)
+        {
             return false;
+        }
 
-        int currentIndex = GetCurrentObjectiveIndex(questId);
+        int currentIndex =
+            GetCurrentObjectiveIndex(questId);
 
-        if (currentIndex >= quest.objectives.Length)
+        if (currentIndex >=
+            quest.objectives.Length)
+        {
             return false;
+        }
 
-        QuestObjective currentObjective = quest.objectives[currentIndex];
+        QuestObjective currentObjective =
+            quest.objectives[currentIndex];
 
         if (currentObjective == null ||
-            currentObjective.objectiveId != objectiveId)
+            currentObjective.objectiveId !=
+            objectiveId)
+        {
             return false;
+        }
 
         currentIndex++;
-        objectiveIndices[questId] = currentIndex;
 
-        Debug.Log($"[Quest] Цель выполнена: {objectiveId}");
+        objectiveIndices[questId] =
+            currentIndex;
 
-        if (currentIndex >= quest.objectives.Length)
+        Debug.Log(
+            $"[Quest] Цель выполнена: {objectiveId}");
+
+        if (currentIndex >=
+            quest.objectives.Length)
         {
             CompleteQuest(questId);
         }
         else
         {
-            OnQuestObjectiveChanged?.Invoke(questId, currentIndex);
+            OnQuestObjectiveChanged?.Invoke(
+                questId,
+                currentIndex);
         }
 
         return true;
@@ -108,38 +150,62 @@ public class QuestManager : MonoBehaviour
 
     public bool CompleteQuest(string questId)
     {
-        if (GetQuestState(questId) != QuestState.Active)
+        if (GetQuestState(questId) !=
+            QuestState.Active)
+        {
             return false;
+        }
 
-        questStates[questId] = QuestState.Completed;
+        questStates[questId] =
+            QuestState.Completed;
 
-        Debug.Log($"[Quest] Задание завершено: {questId}");
-        OnQuestStateChanged?.Invoke(questId, QuestState.Completed);
+        Debug.Log(
+            $"[Quest] Задание завершено: {questId}");
+
+        OnQuestStateChanged?.Invoke(
+            questId,
+            QuestState.Completed);
 
         return true;
     }
 
-    public int GetCurrentObjectiveIndex(string questId)
+    public int GetCurrentObjectiveIndex(
+        string questId)
     {
-        return objectiveIndices.TryGetValue(questId, out int index)
+        return objectiveIndices.TryGetValue(
+            questId,
+            out int index)
             ? index
             : 0;
     }
 
-    public QuestObjective GetCurrentObjective(string questId)
+    public QuestObjective GetCurrentObjective(
+        string questId)
     {
-        if (GetQuestState(questId) != QuestState.Active)
+        if (GetQuestState(questId) !=
+            QuestState.Active)
+        {
             return null;
+        }
 
-        QuestData quest = GetQuestData(questId);
+        QuestData quest =
+            GetQuestData(questId);
 
-        if (quest == null || quest.objectives == null)
+        if (quest == null ||
+            quest.objectives == null)
+        {
             return null;
+        }
 
-        int index = GetCurrentObjectiveIndex(questId);
+        int index =
+            GetCurrentObjectiveIndex(
+                questId);
 
-        if (index < 0 || index >= quest.objectives.Length)
+        if (index < 0 ||
+            index >= quest.objectives.Length)
+        {
             return null;
+        }
 
         return quest.objectives[index];
     }
@@ -154,12 +220,113 @@ public class QuestManager : MonoBehaviour
         foreach (QuestData quest in availableQuests)
         {
             if (quest != null &&
-                GetQuestState(quest.questId) == QuestState.Active)
+                GetQuestState(quest.questId) ==
+                QuestState.Active)
             {
                 result.Add(quest);
             }
         }
 
         return result;
+    }
+
+    public List<QuestSaveData> GetSaveData()
+    {
+        List<QuestSaveData> result = new();
+
+        if (availableQuests == null)
+            return result;
+
+        foreach (QuestData quest in availableQuests)
+        {
+            if (quest == null ||
+                string.IsNullOrWhiteSpace(
+                    quest.questId))
+            {
+                continue;
+            }
+
+            QuestState state =
+                GetQuestState(quest.questId);
+
+            if (state == QuestState.NotStarted)
+                continue;
+
+            int objectiveIndex =
+                GetCurrentObjectiveIndex(
+                    quest.questId);
+
+            result.Add(
+                new QuestSaveData(
+                    quest.questId,
+                    state,
+                    objectiveIndex));
+        }
+
+        return result;
+    }
+
+    public void LoadSaveData(
+        List<QuestSaveData> savedQuests)
+    {
+        questStates.Clear();
+        objectiveIndices.Clear();
+
+        if (savedQuests != null)
+        {
+            foreach (QuestSaveData savedQuest
+                     in savedQuests)
+            {
+                if (savedQuest == null ||
+                    string.IsNullOrWhiteSpace(
+                        savedQuest.questId))
+                {
+                    continue;
+                }
+
+                QuestData quest =
+                    GetQuestData(
+                        savedQuest.questId);
+
+                if (quest == null)
+                    continue;
+
+                questStates[savedQuest.questId] =
+                    savedQuest.state;
+
+                objectiveIndices[savedQuest.questId] =
+                    savedQuest.objectiveIndex;
+            }
+        }
+
+        RefreshQuestEvents();
+    }
+
+    private void RefreshQuestEvents()
+    {
+        if (availableQuests == null)
+            return;
+
+        foreach (QuestData quest in availableQuests)
+        {
+            if (quest == null)
+                continue;
+
+            QuestState state =
+                GetQuestState(
+                    quest.questId);
+
+            OnQuestStateChanged?.Invoke(
+                quest.questId,
+                state);
+
+            if (state == QuestState.Active)
+            {
+                OnQuestObjectiveChanged?.Invoke(
+                    quest.questId,
+                    GetCurrentObjectiveIndex(
+                        quest.questId));
+            }
+        }
     }
 }

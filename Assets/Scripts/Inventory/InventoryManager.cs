@@ -25,14 +25,18 @@ public class InventoryManager : MonoBehaviour
 
         if (item == null)
         {
-            Debug.LogWarning($"[Inventory] Предмет не найден: {itemId}");
+            Debug.LogWarning(
+                $"[Inventory] Предмет не найден: {itemId}");
+
             return false;
         }
 
         if (!ownedItems.Add(itemId))
             return false;
 
-        Debug.Log($"[Inventory] Получен предмет: {item.itemName}");
+        Debug.Log(
+            $"[Inventory] Получен предмет: {item.itemName}");
+
         OnInventoryChanged?.Invoke();
 
         return true;
@@ -43,7 +47,9 @@ public class InventoryManager : MonoBehaviour
         if (!ownedItems.Remove(itemId))
             return false;
 
-        Debug.Log($"[Inventory] Предмет удалён: {itemId}");
+        Debug.Log(
+            $"[Inventory] Предмет удалён: {itemId}");
+
         OnInventoryChanged?.Invoke();
 
         return true;
@@ -53,12 +59,17 @@ public class InventoryManager : MonoBehaviour
     {
         if (availableItems == null ||
             string.IsNullOrWhiteSpace(itemId))
+        {
             return null;
+        }
 
         foreach (ItemData item in availableItems)
         {
-            if (item != null && item.itemId == itemId)
+            if (item != null &&
+                item.itemId == itemId)
+            {
                 return item;
+            }
         }
 
         return null;
@@ -70,12 +81,34 @@ public class InventoryManager : MonoBehaviour
 
         foreach (string itemId in ownedItems)
         {
-            ItemData item = GetItemData(itemId);
+            ItemData item =
+                GetItemData(itemId);
 
             if (item != null)
                 result.Add(item);
         }
 
         return result;
+    }
+
+    public List<string> GetOwnedItemIds()
+    {
+        return new List<string>(ownedItems);
+    }
+
+    public void LoadItems(List<string> itemIds)
+    {
+        ownedItems.Clear();
+
+        if (itemIds != null)
+        {
+            foreach (string itemId in itemIds)
+            {
+                if (GetItemData(itemId) != null)
+                    ownedItems.Add(itemId);
+            }
+        }
+
+        OnInventoryChanged?.Invoke();
     }
 }
